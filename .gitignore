@@ -1,22 +1,7 @@
-# Dependencies
 node_modules/
-
-# Environment variables and secrets
+dist/
 .env
 .env.*
 !.env.example
-
-# Build output
-dist/
 coverage/
-
-# Logs
 *.log
-npm-debug.log*
-
-# Operating system
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
