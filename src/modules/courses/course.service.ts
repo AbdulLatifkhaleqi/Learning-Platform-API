@@ -47,13 +47,8 @@ export const getAllCourses = async (input: ListCoursesInput) => {
 
   const filter: Record<string, unknown> = {};
 
-  if (level !== undefined) {
-    filter.level = level;
-  }
-
-  if (status !== undefined) {
-    filter.status = status;
-  }
+  if (level !== undefined) filter.level = level;
+  if (status !== undefined) filter.status = status;
 
   if (instructorId !== undefined) {
     assertValidId(instructorId, "instructor");
@@ -62,7 +57,6 @@ export const getAllCourses = async (input: ListCoursesInput) => {
 
   if (search) {
     const searchRegex = new RegExp(escapeRegex(search), "i");
-
     filter.$or = [{ title: searchRegex }, { description: searchRegex }];
   }
 
@@ -72,15 +66,11 @@ export const getAllCourses = async (input: ListCoursesInput) => {
   const [courses, total] = await Promise.all([
     Course.find(filter)
       .populate("instructor", "name email")
-      .sort({
-        [sortBy]: direction,
-        _id: direction,
-      })
+      .sort({ [sortBy]: direction, _id: direction })
       .skip(skip)
       .limit(limit)
       .lean()
       .exec(),
-
     Course.countDocuments(filter).exec(),
   ]);
 
