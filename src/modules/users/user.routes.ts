@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import {
   createUser,
   deleteUser,
@@ -6,7 +7,9 @@ import {
   getUserById,
   updateUser,
 } from "./user.controller.js";
+
 import { validate } from "./user.middleware.js";
+
 import {
   createUserSchema,
   listUsersQuerySchema,
@@ -14,14 +17,14 @@ import {
   userIdParamsSchema,
 } from "./user.validation.js";
 
-const router = Router();
+const userRoutes = Router();
 
-router
+userRoutes
   .route("/")
   .post(validate(createUserSchema, "body"), createUser)
   .get(validate(listUsersQuerySchema, "query"), getAllUsers);
 
-router
+userRoutes
   .route("/:id")
   .get(validate(userIdParamsSchema, "params"), getUserById)
   .patch(
@@ -31,4 +34,4 @@ router
   )
   .delete(validate(userIdParamsSchema, "params"), deleteUser);
 
-export default router;
+export default userRoutes;

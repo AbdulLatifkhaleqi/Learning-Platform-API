@@ -1,19 +1,18 @@
-import type { Request, Response, NextFunction } from "express";
-import * as userService from "./user.service.js";
-import type {
-  CreateUserInput,
-  UpdateUserInput,
-  UserQuery,
-} from "./user.types.js";
-import type { ListUsersQuery, UpdateUserBody } from "./user.validation.js";
+import type { RequestHandler } from "express";
 
-export const createUser = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+import * as userService from "./user.service.js";
+
+import type {
+  CreateUserBody,
+  ListUsersQuery,
+  UpdateUserBody,
+  UserIdParams,
+} from "./user.validation.js";
+
+export const createUser: RequestHandler = async (_req, res, next) => {
   try {
-    const input = res.locals.validated as CreateUserInput;
+    const input = res.locals.validatedBody as CreateUserBody;
+
     const user = await userService.createUser(input);
 
     res.status(201).json({
@@ -26,14 +25,11 @@ export const createUser = async (
   }
 };
 
-export const getAllUsers = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const getAllUsers: RequestHandler = async (_req, res, next) => {
   try {
-    const query = res.locals.validated as ListUsersQuery;
-    const result = await userService.getAllUsers(query as UserQuery);
+    const query = res.locals.validatedQuery as ListUsersQuery;
+
+    const result = await userService.getAllUsers(query);
 
     res.status(200).json({
       success: true,
@@ -45,14 +41,11 @@ export const getAllUsers = async (
   }
 };
 
-export const getUserById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const getUserById: RequestHandler = async (_req, res, next) => {
   try {
-    const params = res.locals.validated as { id: string };
-    const user = await userService.getUserById(params.id);
+    const { id } = res.locals.validatedParams as UserIdParams;
+
+    const user = await userService.getUserById(id);
 
     res.status(200).json({
       success: true,
@@ -63,18 +56,13 @@ export const getUserById = async (
   }
 };
 
-export const updateUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const updateUser: RequestHandler = async (_req, res, next) => {
   try {
-    const params = res.locals.validated as { id: string };
-    const input = res.locals.validated as UpdateUserBody;
-    const user = await userService.updateUser(
-      params.id,
-      input as UpdateUserInput,
-    );
+    const { id } = res.locals.validatedParams as UserIdParams;
+
+    const input = res.locals.validatedBody as UpdateUserBody;
+
+    const user = await userService.updateUser(id, input);
 
     res.status(200).json({
       success: true,
@@ -86,15 +74,11 @@ export const updateUser = async (
   }
 };
 
-export const deleteUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const deleteUser: RequestHandler = async (_req, res, next) => {
   try {
-    const params = res.locals.validated as { id: string };
+    const { id } = res.locals.validatedParams as UserIdParams;
 
-    await userService.deleteUser(params.id);
+    await userService.deleteUser(id);
 
     res.status(204).send();
   } catch (error) {

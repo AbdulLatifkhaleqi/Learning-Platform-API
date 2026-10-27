@@ -1,12 +1,15 @@
 import express from "express";
-import { globalErrorHandler } from "./middlewares/error.moddleware.js";
-import { notFoundHandler } from "./middlewares/notfound.middleware.js";
+
 import userRoutes from "./modules/users/user.routes.js";
+import { notFoundHandler } from "./middlewares/notfound.middleware.js";
+import { globalErrorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.disable("x-powered-by");
+
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
