@@ -137,23 +137,38 @@ export const updateEnrollment = async (
 ) => {
   assertValidId(enrollmentId, "enrollment");
 
+  const enrollment = await Enrollment.findById(enrollmentId)
+    .select("status")
+    .lean()
+    .exec();
+
+  if (!enrollment) {
+    throw new AppError("Enrollment not found", 404);
+  }
+
+  if (enrollment.status !== "active") {
+    throw new AppError("Only active enrollments can change status", 409);
+  }
+
+  const now = new Date();
+
   const update: Record<string, unknown> = {
     status: input.status,
   };
 
   if (input.status === "completed") {
-    update.completedAt = new Date();
+    update.completedAt = now;
     update.cancelledAt = null;
   } else if (input.status === "cancelled") {
-    update.cancelledAt = new Date();
+    update.cancelledAt = now;
     update.completedAt = null;
-  } else {
-    update.completedAt = null;
-    update.cancelledAt = null;
   }
 
-  const enrollment = await Enrollment.findByIdAndUpdate(
-    enrollmentId,
+  const updatedEnrollment = await Enrollment.findOneAndUpdate(
+    {
+      _id: new Types.ObjectId(enrollmentId),
+      status: "active",
+    },
     { $set: update },
     {
       new: true,
@@ -165,11 +180,11 @@ export const updateEnrollment = async (
     .lean()
     .exec();
 
-  if (!enrollment) {
-    throw new AppError("Enrollment not found", 404);
+  if (!updatedEnrollment) {
+    throw new AppError("Enrollment status has already changed", 409);
   }
 
-  return enrollment;
+  return updatedEnrollment;
 };
 
 export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
