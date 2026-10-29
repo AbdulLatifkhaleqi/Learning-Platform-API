@@ -245,3 +245,32 @@ export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
     );
   }
 };
+
+export const assertTeacherOwnsEnrollment = async (
+  enrollmentId: string,
+  teacherId: string,
+): Promise<void> => {
+  assertValidId(enrollmentId, "enrollment");
+  assertValidId(teacherId, "teacher");
+
+  const enrollment = await Enrollment.findById(enrollmentId)
+    .select("course")
+    .populate({
+      path: "course",
+      select: "instructor",
+    })
+    .lean()
+    .exec();
+
+  if (!enrollment) {
+    throw new AppError("Enrollment not found", 404);
+  }
+
+  const course = enrollment.course as unknown as {
+    instructor: Types.ObjectId;
+  } | null;
+
+  if (!course || String(course.instructor) !== teacherId) {
+    throw new AppError("You cannot access this enrollment", 403);
+  }
+};

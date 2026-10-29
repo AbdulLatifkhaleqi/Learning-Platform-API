@@ -77,9 +77,6 @@ export const getAllEnrollments: RequestHandler = async (_req, res, next) => {
   }
 };
 
-// src/modules/enrollments/enrollment.service.ts
-// Replace getEnrollmentById with this version.
-
 export const getEnrollmentById = async (enrollmentId: string) => {
   assertValidId(enrollmentId, "enrollment");
 
