@@ -67,13 +67,41 @@ export const createEnrollment = async (
   }
 };
 
-export const getAllEnrollments = async (input: ListEnrollmentsInput) => {
+export const getAllEnrollments = async (
+  input: ListEnrollmentsInput,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+) => {
+  assertValidId(requester.userId, "requester");
+
   const { page, limit, studentId, courseId, status, sortOrder } = input;
 
   const filter: Record<string, unknown> = {};
 
+  if (requester.role === "student") {
+    filter.student = new Types.ObjectId(requester.userId);
+  } else if (requester.role === "teacher") {
+    const instructorCourses = await Course.find({
+      instructor: new Types.ObjectId(requester.userId),
+    })
+      .select("_id")
+      .lean()
+      .exec();
+
+    filter.course = {
+      $in: instructorCourses.map((course) => course._id),
+    };
+  }
+
   if (studentId !== undefined) {
     assertValidId(studentId, "student");
+
+    if (requester.role === "student" && studentId !== requester.userId) {
+      throw new AppError("You can only access your own enrollments", 403);
+    }
+
     filter.student = new Types.ObjectId(studentId);
   }
 
@@ -92,7 +120,7 @@ export const getAllEnrollments = async (input: ListEnrollmentsInput) => {
   const [enrollments, total] = await Promise.all([
     Enrollment.find(filter)
       .populate("student", "name email")
-      .populate("course", "title price level status")
+      .populate("course", "title price level status instructor")
       .sort({ createdAt: direction, _id: direction })
       .skip(skip)
       .limit(limit)
@@ -187,9 +215,7 @@ export const updateEnrollment = async (
   return updatedEnrollment;
 };
 
-export const deleteEnrollment = async (
-  enrollmentId: string,
-): Promise<void> => {
+export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
   assertValidId(enrollmentId, "enrollment");
 
   const enrollment = await Enrollment.findById(enrollmentId)
@@ -202,10 +228,7 @@ export const deleteEnrollment = async (
   }
 
   if (enrollment.status === "completed") {
-    throw new AppError(
-      "Completed enrollments cannot be deleted",
-      409,
-    );
+    throw new AppError("Completed enrollments cannot be deleted", 409);
   }
 
   const deletedEnrollment = await Enrollment.findOneAndDelete({
