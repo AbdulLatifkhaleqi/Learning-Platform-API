@@ -187,12 +187,38 @@ export const updateEnrollment = async (
   return updatedEnrollment;
 };
 
-export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
+export const deleteEnrollment = async (
+  enrollmentId: string,
+): Promise<void> => {
   assertValidId(enrollmentId, "enrollment");
 
-  const enrollment = await Enrollment.findByIdAndDelete(enrollmentId).exec();
+  const enrollment = await Enrollment.findById(enrollmentId)
+    .select("status")
+    .lean()
+    .exec();
 
   if (!enrollment) {
     throw new AppError("Enrollment not found", 404);
+  }
+
+  if (enrollment.status === "completed") {
+    throw new AppError(
+      "Completed enrollments cannot be deleted",
+      409,
+    );
+  }
+
+  const deletedEnrollment = await Enrollment.findOneAndDelete({
+    _id: new Types.ObjectId(enrollmentId),
+    status: { $ne: "completed" },
+  })
+    .select("_id")
+    .exec();
+
+  if (!deletedEnrollment) {
+    throw new AppError(
+      "Enrollment could not be deleted because its status changed",
+      409,
+    );
   }
 };
