@@ -33,7 +33,21 @@ export const getAllEnrollments: RequestHandler = async (_req, res, next) => {
   try {
     const query = res.locals.validatedQuery as ListEnrollmentsQuery;
 
-    const result = await enrollmentService.getAllEnrollments(query);
+    const auth = res.locals.auth as
+      | {
+          userId: string;
+          role: "student" | "teacher" | "admin";
+        }
+      | undefined;
+
+    if (!auth?.userId || !auth.role) {
+      throw new Error("Authentication context is missing");
+    }
+
+    const result = await enrollmentService.getAllEnrollments(query, {
+      userId: auth.userId,
+      role: auth.role,
+    });
 
     res.status(200).json({
       success: true,
