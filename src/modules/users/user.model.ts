@@ -1,12 +1,6 @@
 import { Schema, model, type InferSchemaType } from "mongoose";
 import { USER_ROLES } from "./user.types.js";
 
-passwordHash: {
-  type: String;
-  required: true;
-  select: false;
-}
-
 const userSchema = new Schema(
   {
     name: {
@@ -24,6 +18,12 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       maxlength: 254,
+    },
+
+    passwordHash: {
+      type: String,
+      required: true,
+      select: false,
     },
 
     role: {
