@@ -184,11 +184,16 @@ export const getEnrollmentById = async (enrollmentId: string) => {
 export const updateEnrollment = async (
   enrollmentId: string,
   input: UpdateEnrollmentInput,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
 ) => {
   assertValidId(enrollmentId, "enrollment");
+  assertValidId(requester.userId, "requester");
 
   const enrollment = await Enrollment.findById(enrollmentId)
-    .select("status")
+    .select("student course status")
     .lean()
     .exec();
 
@@ -196,8 +201,16 @@ export const updateEnrollment = async (
     throw new AppError("Enrollment not found", 404);
   }
 
+  if (requester.role !== "admin") {
+    throw new AppError("Only administrators can update enrollment status", 403);
+  }
+
   if (enrollment.status !== "active") {
     throw new AppError("Only active enrollments can change status", 409);
+  }
+
+  if (input.status === "active") {
+    throw new AppError("An enrollment cannot transition back to active", 400);
   }
 
   const now = new Date();
@@ -209,7 +222,7 @@ export const updateEnrollment = async (
   if (input.status === "completed") {
     update.completedAt = now;
     update.cancelledAt = null;
-  } else if (input.status === "cancelled") {
+  } else {
     update.cancelledAt = now;
     update.completedAt = null;
   }
@@ -219,7 +232,9 @@ export const updateEnrollment = async (
       _id: new Types.ObjectId(enrollmentId),
       status: "active",
     },
-    { $set: update },
+    {
+      $set: update,
+    },
     {
       new: true,
       runValidators: true,
