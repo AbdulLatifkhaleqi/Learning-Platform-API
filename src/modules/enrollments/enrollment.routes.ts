@@ -1,5 +1,3 @@
-// src/modules/enrollments/enrollment.routes.ts
-
 import { Router } from "express";
 
 import {
