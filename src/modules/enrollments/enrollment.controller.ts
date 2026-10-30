@@ -99,14 +99,10 @@ export const updateEnrollment: RequestHandler = async (_req, res, next) => {
     const input = res.locals.validatedBody as UpdateEnrollmentBody;
     const auth = getAuthContext(res);
 
-    if (auth.role !== "admin") {
-      throw new AppError(
-        "Only administrators can update enrollment status",
-        403,
-      );
-    }
-
-    const enrollment = await enrollmentService.updateEnrollment(id, input);
+    const enrollment = await enrollmentService.updateEnrollment(id, input, {
+      userId: auth.userId,
+      role: auth.role,
+    });
 
     res.status(200).json({
       success: true,
