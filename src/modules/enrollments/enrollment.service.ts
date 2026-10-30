@@ -252,20 +252,18 @@ export const updateEnrollment = async (
   return updatedEnrollment;
 };
 
-export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
+export const deleteEnrollment = async (
+  enrollmentId: string,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+): Promise<void> => {
   assertValidId(enrollmentId, "enrollment");
+  assertValidId(requester.userId, "requester");
 
-  const enrollment = await Enrollment.findById(enrollmentId)
-    .select("status")
-    .lean()
-    .exec();
-
-  if (!enrollment) {
-    throw new AppError("Enrollment not found", 404);
-  }
-
-  if (enrollment.status === "completed") {
-    throw new AppError("Completed enrollments cannot be deleted", 409);
+  if (requester.role !== "admin") {
+    throw new AppError("Only administrators can delete enrollments", 403);
   }
 
   const deletedEnrollment = await Enrollment.findOneAndDelete({
@@ -273,13 +271,24 @@ export const deleteEnrollment = async (enrollmentId: string): Promise<void> => {
     status: { $ne: "completed" },
   })
     .select("_id")
+    .lean()
     .exec();
 
   if (!deletedEnrollment) {
-    throw new AppError(
-      "Enrollment could not be deleted because its status changed",
-      409,
-    );
+    const existingEnrollment = await Enrollment.findById(enrollmentId)
+      .select("status")
+      .lean()
+      .exec();
+
+    if (!existingEnrollment) {
+      throw new AppError("Enrollment not found", 404);
+    }
+
+    if (existingEnrollment.status === "completed") {
+      throw new AppError("Completed enrollments cannot be deleted", 409);
+    }
+
+    throw new AppError("Enrollment could not be deleted", 409);
   }
 };
 

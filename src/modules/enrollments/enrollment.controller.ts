@@ -119,11 +119,10 @@ export const deleteEnrollment: RequestHandler = async (_req, res, next) => {
     const { id } = res.locals.validatedParams as EnrollmentIdParams;
     const auth = getAuthContext(res);
 
-    if (auth.role !== "admin") {
-      throw new AppError("Only administrators can delete enrollments", 403);
-    }
-
-    await enrollmentService.deleteEnrollment(id);
+    await enrollmentService.deleteEnrollment(id, {
+      userId: auth.userId,
+      role: auth.role,
+    });
 
     res.status(204).send();
   } catch (error) {
