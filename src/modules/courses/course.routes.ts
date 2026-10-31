@@ -1,3 +1,5 @@
+// src/modules/courses/course.routes.ts
+
 import { Router } from "express";
 
 import {
@@ -9,7 +11,7 @@ import {
 } from "./course.controller.js";
 
 import { validate } from "./course.middleware.js";
-import { authenticate } from "../auth/auth.middleware.js";
+import { authenticate, requireRole } from "../auth/auth.middleware.js";
 
 import {
   createCourseSchema,
@@ -20,8 +22,7 @@ import {
 
 const courseRoutes = Router();
 
-//////////////////////////////////////////
-///////// Public routes
+// Public routes
 courseRoutes.get("/", validate(listCoursesQuerySchema, "query"), getAllCourses);
 
 courseRoutes.get(
@@ -30,25 +31,32 @@ courseRoutes.get(
   getCourseById,
 );
 
-// Authenticated routes
+// Teachers and admins can create courses.
 courseRoutes.post(
   "/",
   authenticate,
+  requireRole("teacher", "admin"),
   validate(createCourseSchema, "body"),
   createCourse,
 );
 
+// Teachers and admins can request updates.
+// Ownership checks must also be enforced in the service.
 courseRoutes.patch(
   "/:id",
   authenticate,
+  requireRole("teacher", "admin"),
   validate(courseIdParamsSchema, "params"),
   validate(updateCourseSchema, "body"),
   updateCourse,
 );
 
+// Teachers and admins can request deletion.
+// Ownership checks must also be enforced in the service.
 courseRoutes.delete(
   "/:id",
   authenticate,
+  requireRole("teacher", "admin"),
   validate(courseIdParamsSchema, "params"),
   deleteCourse,
 );
