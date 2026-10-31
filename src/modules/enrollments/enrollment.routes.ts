@@ -7,8 +7,8 @@ import {
   getEnrollmentById,
   updateEnrollment,
 } from "./enrollment.controller.js";
-
 import { validate } from "./enrollment.middleware.js";
+import { authenticate } from "../auth/auth.middleware.js";
 
 import {
   createEnrollmentSchema,
@@ -18,6 +18,7 @@ import {
 } from "./enrollment.validation.js";
 
 const enrollmentRoutes = Router();
+enrollmentRoutes.use(authenticate);
 
 enrollmentRoutes
   .route("/")
