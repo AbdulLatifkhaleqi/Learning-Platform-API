@@ -2,7 +2,13 @@ import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
 import { AppError } from "../../utils/AppError.js";
-import type { AuthenticatedUser, TokenPayload } from "./auth.types.js";
+
+import type {
+  AuthenticatedUser,
+  AuthRole,
+  TokenPayload,
+} from "./auth.types.js";
+
 import { AUTH_ROLES } from "./auth.types.js";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -63,4 +69,24 @@ export const authenticate: RequestHandler = (req, res, next) => {
   } catch {
     next(new AppError("Invalid or expired access token", 401));
   }
+};
+
+export const requireRole = (...allowedRoles: AuthRole[]): RequestHandler => {
+  return (_req, res, next): void => {
+    const auth = res.locals.auth as
+      | { userId: string; role: AuthRole }
+      | undefined;
+
+    if (!auth?.userId || !auth.role) {
+      next(new AppError("Authentication required", 401));
+      return;
+    }
+
+    if (!allowedRoles.includes(auth.role)) {
+      next(new AppError("Insufficient permissions", 403));
+      return;
+    }
+
+    next();
+  };
 };
