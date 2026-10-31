@@ -3,7 +3,6 @@ import jwt, { type SignOptions } from "jsonwebtoken";
 
 import { User } from "../users/user.model.js";
 import { AppError } from "../../utils/AppError.js";
-
 import type { LoginInput, RegisterInput, TokenPair } from "./auth.types.js";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
