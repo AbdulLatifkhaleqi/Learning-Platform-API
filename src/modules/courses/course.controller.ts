@@ -62,7 +62,12 @@ export const updateCourse: RequestHandler = async (_req, res, next) => {
     const { id } = res.locals.validatedParams as CourseIdParams;
     const input = res.locals.validatedBody as UpdateCourseBody;
 
-    const course = await courseService.updateCourse(id, input);
+    const auth = res.locals.auth as {
+      userId: string;
+      role: "student" | "teacher" | "admin";
+    };
+
+    const course = await courseService.updateCourse(id, input, auth);
 
     res.status(200).json({
       success: true,
