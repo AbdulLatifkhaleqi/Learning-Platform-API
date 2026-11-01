@@ -105,20 +105,29 @@ export const getCourseById = async (courseId: string) => {
 export const updateCourse = async (
   courseId: string,
   input: UpdateCourseInput,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
 ) => {
   assertValidId(courseId, "course");
+  assertValidId(requester.userId, "requester");
 
-  const update: Record<string, string | number> = {};
+  const filter: Record<string, unknown> = {
+    _id: new Types.ObjectId(courseId),
+  };
 
-  if (input.title !== undefined) update.title = input.title;
-  if (input.description !== undefined) update.description = input.description;
-  if (input.price !== undefined) update.price = input.price;
-  if (input.level !== undefined) update.level = input.level;
-  if (input.status !== undefined) update.status = input.status;
+  if (requester.role === "teacher") {
+    filter.instructor = new Types.ObjectId(requester.userId);
+  } else if (requester.role !== "admin") {
+    throw new AppError("Insufficient permissions", 403);
+  }
 
-  const course = await Course.findByIdAndUpdate(
-    new Types.ObjectId(courseId),
-    { $set: update },
+  const updatedCourse = await Course.findOneAndUpdate(
+    filter,
+    {
+      $set: input,
+    },
     {
       new: true,
       runValidators: true,
@@ -128,11 +137,14 @@ export const updateCourse = async (
     .lean()
     .exec();
 
-  if (!course) {
-    throw new AppError("Course not found", 404);
+  if (!updatedCourse) {
+    throw new AppError(
+      "Course not found or you do not have permission to update it",
+      404,
+    );
   }
 
-  return course;
+  return updatedCourse;
 };
 
 export const deleteCourse = async (courseId: string): Promise<void> => {
