@@ -15,13 +15,6 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 
-app.get("/api/v1/health", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "API is healthy",
-  });
-});
-
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/courses", courseRoutes);
 app.use("/api/v1/enrollments", enrollmentRoutes);
