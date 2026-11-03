@@ -95,3 +95,24 @@ export const deleteCourse: RequestHandler = async (_req, res, next) => {
     next(error);
   }
 };
+
+export const archiveCourse: RequestHandler = async (_req, res, next) => {
+  try {
+    const { id } = res.locals.validatedParams as CourseIdParams;
+
+    const auth = res.locals.auth as {
+      userId: string;
+      role: "student" | "teacher" | "admin";
+    };
+
+    const course = await courseService.archiveCourse(id, auth);
+
+    res.status(200).json({
+      success: true,
+      message: "Course archived successfully",
+      data: course,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
