@@ -147,14 +147,37 @@ export const updateCourse = async (
   return updatedCourse;
 };
 
-export const deleteCourse = async (courseId: string): Promise<void> => {
+export const deleteCourse = async (
+  courseId: string,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+): Promise<void> => {
   assertValidId(courseId, "course");
+  assertValidId(requester.userId, "requester");
 
-  const course = await Course.findByIdAndDelete(
-    new Types.ObjectId(courseId),
-  ).exec();
+  if (requester.role !== "teacher" && requester.role !== "admin") {
+    throw new AppError("Insufficient permissions", 403);
+  }
 
-  if (!course) {
-    throw new AppError("Course not found", 404);
+  const filter: Record<string, unknown> = {
+    _id: new Types.ObjectId(courseId),
+  };
+
+  if (requester.role === "teacher") {
+    filter.instructor = new Types.ObjectId(requester.userId);
+  }
+
+  const deletedCourse = await Course.findOneAndDelete(filter)
+    .select("_id")
+    .lean()
+    .exec();
+
+  if (!deletedCourse) {
+    throw new AppError(
+      "Course not found or you do not have permission to delete it",
+      404,
+    );
   }
 };
