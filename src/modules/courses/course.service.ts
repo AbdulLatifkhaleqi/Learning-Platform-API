@@ -208,3 +208,52 @@ export const deleteCourse = async (
     );
   }
 };
+
+export const archiveCourse = async (
+  courseId: string,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+) => {
+  assertValidId(courseId, "course");
+  assertValidId(requester.userId, "requester");
+
+  if (requester.role !== "teacher" && requester.role !== "admin") {
+    throw new AppError("Insufficient permissions", 403);
+  }
+
+  const filter: Record<string, unknown> = {
+    _id: new Types.ObjectId(courseId),
+    status: { $ne: "archived" },
+  };
+
+  if (requester.role === "teacher") {
+    filter.instructor = new Types.ObjectId(requester.userId);
+  }
+
+  const course = await Course.findOneAndUpdate(
+    filter,
+    {
+      $set: {
+        status: "archived",
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .populate("instructor", "name email")
+    .lean()
+    .exec();
+
+  if (!course) {
+    throw new AppError(
+      "Course not found, already archived, or you lack permission",
+      409,
+    );
+  }
+
+  return course;
+};
