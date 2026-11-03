@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 
+import { Enrollment } from "../enrollments/enrollment.model.js";
 import { Course } from "./course.model.js";
 import { AppError } from "../../utils/AppError.js";
 
@@ -169,15 +170,41 @@ export const deleteCourse = async (
     filter.instructor = new Types.ObjectId(requester.userId);
   }
 
-  const deletedCourse = await Course.findOneAndDelete(filter)
+  const course = await Course.findOne(filter)
+    .select("_id status")
+    .lean()
+    .exec();
+
+  if (!course) {
+    throw new AppError(
+      "Course not found or you do not have permission to delete it",
+      404,
+    );
+  }
+
+  const hasEnrollments = await Enrollment.exists({
+    course: course._id,
+  });
+
+  if (hasEnrollments) {
+    throw new AppError(
+      "This course has enrollment records and cannot be deleted. Archive it instead.",
+      409,
+    );
+  }
+
+  const deletedCourse = await Course.findOneAndDelete({
+    ...filter,
+    status: course.status,
+  })
     .select("_id")
     .lean()
     .exec();
 
   if (!deletedCourse) {
     throw new AppError(
-      "Course not found or you do not have permission to delete it",
-      404,
+      "Course could not be deleted because its state changed",
+      409,
     );
   }
 };
