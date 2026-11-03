@@ -83,10 +83,14 @@ export const getAllCourses = async (input: ListCoursesInput) => {
     },
   };
 };
+
 export const getCourseById = async (courseId: string) => {
   assertValidId(courseId, "course");
 
-  const course = await Course.findById(new Types.ObjectId(courseId))
+  const course = await Course.findOne({
+    _id: new Types.ObjectId(courseId),
+    status: "published",
+  })
     .populate("instructor", "name email")
     .lean()
     .exec();
