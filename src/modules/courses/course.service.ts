@@ -35,29 +35,24 @@ export const createCourse = async (
 };
 
 export const getAllCourses = async (input: ListCoursesInput) => {
-  const {
-    page,
-    limit,
-    search,
-    level,
-    status,
-    instructorId,
-    sortBy,
-    sortOrder,
-  } = input;
+  const { page, limit, search, level, instructorId, sortBy, sortOrder } = input;
 
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = {
+    status: "published",
+  };
 
-  if (level !== undefined) filter.level = level;
-  if (status !== undefined) filter.status = status;
+  if (level !== undefined) {
+    filter.level = level;
+  }
 
   if (instructorId !== undefined) {
     assertValidId(instructorId, "instructor");
     filter.instructor = new Types.ObjectId(instructorId);
   }
 
-  if (search) {
+  if (search !== undefined) {
     const searchRegex = new RegExp(escapeRegex(search), "i");
+
     filter.$or = [{ title: searchRegex }, { description: searchRegex }];
   }
 
@@ -72,6 +67,7 @@ export const getAllCourses = async (input: ListCoursesInput) => {
       .limit(limit)
       .lean()
       .exec(),
+
     Course.countDocuments(filter).exec(),
   ]);
 
@@ -87,7 +83,6 @@ export const getAllCourses = async (input: ListCoursesInput) => {
     },
   };
 };
-
 export const getCourseById = async (courseId: string) => {
   assertValidId(courseId, "course");
 
