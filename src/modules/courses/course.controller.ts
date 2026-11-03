@@ -83,7 +83,12 @@ export const deleteCourse: RequestHandler = async (_req, res, next) => {
   try {
     const { id } = res.locals.validatedParams as CourseIdParams;
 
-    await courseService.deleteCourse(id);
+    const auth = res.locals.auth as {
+      userId: string;
+      role: "student" | "teacher" | "admin";
+    };
+
+    await courseService.deleteCourse(id, auth);
 
     res.status(204).send();
   } catch (error) {
