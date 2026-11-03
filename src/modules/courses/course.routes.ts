@@ -3,6 +3,7 @@
 import { Router } from "express";
 
 import {
+  archiveCourse,
   createCourse,
   deleteCourse,
   getAllCourses,
@@ -29,6 +30,14 @@ courseRoutes.get(
   "/:id",
   validate(courseIdParamsSchema, "params"),
   getCourseById,
+);
+
+courseRoutes.patch(
+  "/:id/archive",
+  authenticate,
+  requireRole("teacher", "admin"),
+  validate(courseIdParamsSchema, "params"),
+  archiveCourse,
 );
 
 // Teachers and admins can create courses.
