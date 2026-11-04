@@ -8,6 +8,7 @@ import {
   deleteCourse,
   getAllCourses,
   getCourseById,
+  getMyCourses,
   updateCourse,
 } from "./course.controller.js";
 
@@ -30,6 +31,14 @@ courseRoutes.get(
   "/:id",
   validate(courseIdParamsSchema, "params"),
   getCourseById,
+);
+
+courseRoutes.get(
+  "/my-courses",
+  authenticate,
+  requireRole("teacher", "admin"),
+  validate(listCoursesQuerySchema, "query"),
+  getMyCourses,
 );
 
 courseRoutes.patch(
