@@ -331,3 +331,65 @@ export const getMyCourses = async (
     },
   };
 };
+
+export const publishCourse = async (
+  courseId: string,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+) => {
+  assertValidId(courseId, "course");
+  assertValidId(requester.userId, "requester");
+
+  if (requester.role !== "teacher" && requester.role !== "admin") {
+    throw new AppError("Insufficient permissions", 403);
+  }
+
+  const filter: Record<string, unknown> = {
+    _id: new Types.ObjectId(courseId),
+  };
+
+  if (requester.role === "teacher") {
+    filter.instructor = new Types.ObjectId(requester.userId);
+  }
+
+  const course = await Course.findOne(filter).exec();
+
+  if (!course) {
+    throw new AppError("Course not found or access denied", 404);
+  }
+
+  if (course.status !== "draft") {
+    throw new AppError(
+      `Only draft courses can be published. Current status: ${course.status}`,
+      409,
+    );
+  }
+
+  const publishedCourse = await Course.findOneAndUpdate(
+    {
+      ...filter,
+      status: "draft",
+    },
+    {
+      $set: { status: "published" },
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .populate("instructor", "name email")
+    .lean()
+    .exec();
+
+  if (!publishedCourse) {
+    throw new AppError(
+      "Course status changed during publishing. Please retry.",
+      409,
+    );
+  }
+
+  return publishedCourse;
+};
