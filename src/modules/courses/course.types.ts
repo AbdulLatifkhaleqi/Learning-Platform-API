@@ -18,7 +18,6 @@ export interface UpdateCourseInput {
   description?: string | undefined;
   price?: number | undefined;
   level?: CourseLevel | undefined;
-  status?: CourseStatus | undefined;
 }
 
 export interface ListCoursesInput {
