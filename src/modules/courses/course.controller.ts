@@ -116,3 +116,24 @@ export const archiveCourse: RequestHandler = async (_req, res, next) => {
     next(error);
   }
 };
+
+export const getMyCourses: RequestHandler = async (_req, res, next) => {
+  try {
+    const query = res.locals.validatedQuery as ListCoursesQuery;
+
+    const auth = res.locals.auth as {
+      userId: string;
+      role: "student" | "teacher" | "admin";
+    };
+
+    const result = await courseService.getMyCourses(query, auth);
+
+    res.status(200).json({
+      success: true,
+      data: result.courses,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
