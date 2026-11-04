@@ -256,3 +256,78 @@ export const archiveCourse = async (
 
   return course;
 };
+
+export const getMyCourses = async (
+  input: ListCoursesInput,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
+) => {
+  assertValidId(requester.userId, "requester");
+
+  if (requester.role !== "teacher" && requester.role !== "admin") {
+    throw new AppError("Insufficient permissions", 403);
+  }
+
+  const {
+    page,
+    limit,
+    search,
+    level,
+    status,
+    instructorId,
+    sortBy,
+    sortOrder,
+  } = input;
+
+  const filter: Record<string, unknown> = {};
+
+  if (requester.role === "teacher") {
+    filter.instructor = new Types.ObjectId(requester.userId);
+  } else if (instructorId !== undefined) {
+    assertValidId(instructorId, "instructor");
+    filter.instructor = new Types.ObjectId(instructorId);
+  }
+
+  if (level !== undefined) {
+    filter.level = level;
+  }
+
+  if (status !== undefined) {
+    filter.status = status;
+  }
+
+  if (search !== undefined) {
+    const searchRegex = new RegExp(escapeRegex(search), "i");
+
+    filter.$or = [{ title: searchRegex }, { description: searchRegex }];
+  }
+
+  const skip = (page - 1) * limit;
+  const direction: 1 | -1 = sortOrder === "asc" ? 1 : -1;
+
+  const [courses, total] = await Promise.all([
+    Course.find(filter)
+      .populate("instructor", "name email")
+      .sort({ [sortBy]: direction, _id: direction })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec(),
+
+    Course.countDocuments(filter).exec(),
+  ]);
+
+  return {
+    courses,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPreviousPage: page > 1,
+    },
+  };
+};
