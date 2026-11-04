@@ -1,5 +1,3 @@
-// src/modules/courses/course.routes.ts
-
 import { Router } from "express";
 
 import {
@@ -9,6 +7,7 @@ import {
   getAllCourses,
   getCourseById,
   getMyCourses,
+  publishCourse,
   updateCourse,
 } from "./course.controller.js";
 
@@ -31,6 +30,14 @@ courseRoutes.get(
   "/:id",
   validate(courseIdParamsSchema, "params"),
   getCourseById,
+);
+
+courseRoutes.patch(
+  "/:id/publish",
+  authenticate,
+  requireRole("teacher", "admin"),
+  validate(courseIdParamsSchema, "params"),
+  publishCourse,
 );
 
 courseRoutes.get(
