@@ -137,3 +137,24 @@ export const getMyCourses: RequestHandler = async (_req, res, next) => {
     next(error);
   }
 };
+
+export const publishCourse: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = res.locals.validatedParams as CourseIdParams;
+
+    const auth = res.locals.auth as {
+      userId: string;
+      role: "student" | "teacher" | "admin";
+    };
+
+    const course = await courseService.publishCourse(id, auth);
+
+    res.status(200).json({
+      success: true,
+      message: "Course published successfully",
+      data: course,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
