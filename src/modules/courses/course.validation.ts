@@ -39,19 +39,15 @@ export const createCourseSchema = z
 
 export const updateCourseSchema = z
   .object({
-    title: titleSchema.optional(),
-    description: descriptionSchema.optional(),
-    price: priceSchema.optional(),
-    level: z.enum(COURSE_LEVELS).optional(),
-    status: z.enum(COURSE_STATUSES).optional(),
+    title: z.string().trim().min(3).max(120).optional(),
+    description: z.string().trim().min(20).max(5000).optional(),
+    price: z.number().min(0).optional(),
+    level: z.enum(["beginner", "intermediate", "advanced"]).optional(),
   })
   .strict()
-  .refine(
-    (input) => Object.values(input).some((value) => value !== undefined),
-    {
-      message: "At least one field must be provided",
-    },
-  );
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
 
 export const listCoursesQuerySchema = z
   .object({
