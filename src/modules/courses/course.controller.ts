@@ -79,7 +79,7 @@ export const updateCourse: RequestHandler = async (_req, res, next) => {
   }
 };
 
-export const deleteCourse: RequestHandler = async (_req, res, next) => {
+export const deleteCourse: RequestHandler = async (req, res, next) => {
   try {
     const { id } = res.locals.validatedParams as CourseIdParams;
 
@@ -88,9 +88,13 @@ export const deleteCourse: RequestHandler = async (_req, res, next) => {
       role: "student" | "teacher" | "admin";
     };
 
-    await courseService.deleteCourse(id, auth);
+    const result = await courseService.deleteCourse(id, auth);
 
-    res.status(204).send();
+    res.status(200).json({
+      success: true,
+      message: "Course deleted successfully",
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
