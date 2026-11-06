@@ -153,7 +153,7 @@ export const deleteCourse = async (
     userId: string;
     role: "student" | "teacher" | "admin";
   },
-): Promise<void> => {
+) => {
   assertValidId(courseId, "course");
   assertValidId(requester.userId, "requester");
 
@@ -169,16 +169,10 @@ export const deleteCourse = async (
     filter.instructor = new Types.ObjectId(requester.userId);
   }
 
-  const course = await Course.findOne(filter)
-    .select("_id status")
-    .lean()
-    .exec();
+  const course = await Course.findOne(filter).select("_id").lean().exec();
 
   if (!course) {
-    throw new AppError(
-      "Course not found or you do not have permission to delete it",
-      404,
-    );
+    throw new AppError("Course not found or access denied", 404);
   }
 
   const hasEnrollments = await Enrollment.exists({
@@ -187,25 +181,21 @@ export const deleteCourse = async (
 
   if (hasEnrollments) {
     throw new AppError(
-      "This course has enrollment records and cannot be deleted. Archive it instead.",
+      "Course cannot be deleted because it has enrollment records. Archive it instead.",
       409,
     );
   }
 
-  const deletedCourse = await Course.findOneAndDelete({
-    ...filter,
-    status: course.status,
-  })
-    .select("_id")
-    .lean()
-    .exec();
+  const deletedCourse = await Course.findOneAndDelete(filter).exec();
 
   if (!deletedCourse) {
-    throw new AppError(
-      "Course could not be deleted because its state changed",
-      409,
-    );
+    throw new AppError("Course could not be deleted. Please retry.", 409);
   }
+
+  return {
+    id: deletedCourse._id.toString(),
+    deleted: true,
+  };
 };
 
 export const archiveCourse = async (
