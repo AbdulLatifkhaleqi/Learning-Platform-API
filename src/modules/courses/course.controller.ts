@@ -96,7 +96,7 @@ export const deleteCourse: RequestHandler = async (_req, res, next) => {
   }
 };
 
-export const archiveCourse: RequestHandler = async (_req, res, next) => {
+export const archiveCourse: RequestHandler = async (req, res, next) => {
   try {
     const { id } = res.locals.validatedParams as CourseIdParams;
 
