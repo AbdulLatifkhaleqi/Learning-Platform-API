@@ -33,19 +33,13 @@ const getAuthContext = (res: Parameters<RequestHandler>[1]): AuthContext => {
   return auth;
 };
 
-export const createEnrollment: RequestHandler = async (_req, res, next) => {
+export const createEnrollment: RequestHandler = async (req, res, next) => {
   try {
-    const input = res.locals.validatedBody as CreateEnrollmentBody;
+    const { courseId } = res.locals.validatedBody as CreateEnrollmentBody;
+
     const auth = getAuthContext(res);
 
-    if (auth.role !== "student") {
-      throw new AppError("Only students can enroll in courses", 403);
-    }
-
-    const enrollment = await enrollmentService.createEnrollment(
-      input,
-      auth.userId,
-    );
+    const enrollment = await enrollmentService.createEnrollment(courseId, auth);
 
     res.status(201).json({
       success: true,
