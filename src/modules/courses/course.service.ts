@@ -224,19 +224,17 @@ export const archiveCourse = async (
 
   const filter: Record<string, unknown> = {
     _id: new Types.ObjectId(courseId),
-    status: { $ne: "archived" },
+    status: { $in: ["draft", "published"] },
   };
 
   if (requester.role === "teacher") {
     filter.instructor = new Types.ObjectId(requester.userId);
   }
 
-  const course = await Course.findOneAndUpdate(
+  const archivedCourse = await Course.findOneAndUpdate(
     filter,
     {
-      $set: {
-        status: "archived",
-      },
+      $set: { status: "archived" },
     },
     {
       new: true,
@@ -247,14 +245,22 @@ export const archiveCourse = async (
     .lean()
     .exec();
 
-  if (!course) {
-    throw new AppError(
-      "Course not found, already archived, or you lack permission",
-      409,
-    );
+  if (!archivedCourse) {
+    const existingCourse = await Course.exists({
+      _id: new Types.ObjectId(courseId),
+      ...(requester.role === "teacher"
+        ? { instructor: new Types.ObjectId(requester.userId) }
+        : {}),
+    });
+
+    if (!existingCourse) {
+      throw new AppError("Course not found or access denied", 404);
+    }
+
+    throw new AppError("Course is already archived", 409);
   }
 
-  return course;
+  return archivedCourse;
 };
 
 export const getMyCourses = async (
