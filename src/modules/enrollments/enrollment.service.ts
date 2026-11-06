@@ -17,43 +17,50 @@ const assertValidId = (id: string, resource: string): void => {
 };
 
 export const createEnrollment = async (
-  input: CreateEnrollmentInput,
-  studentId: string,
+  courseId: string,
+  requester: {
+    userId: string;
+    role: "student" | "teacher" | "admin";
+  },
 ) => {
-  assertValidId(studentId, "student");
-  assertValidId(input.courseId, "course");
+  assertValidId(courseId, "course");
+  assertValidId(requester.userId, "user");
 
-  const course = await Course.findById(input.courseId)
-    .select("_id status")
+  if (requester.role !== "student") {
+    throw new AppError("Only students can enroll in courses", 403);
+  }
+
+  const course = await Course.findOne({
+    _id: new Types.ObjectId(courseId),
+    status: "published",
+  })
+    .select("_id instructor")
     .lean()
     .exec();
 
   if (!course) {
-    throw new AppError("Course not found", 404);
+    throw new AppError("Course not found or not available for enrollment", 404);
   }
 
-  if (course.status !== "published") {
-    throw new AppError("Only published courses can be enrolled in", 400);
-  }
-
-  const existingEnrollment = await Enrollment.findOne({
-    student: new Types.ObjectId(studentId),
-    course: new Types.ObjectId(input.courseId),
-  })
-    .select("_id")
-    .lean()
-    .exec();
-
-  if (existingEnrollment) {
-    throw new AppError("You are already enrolled in this course", 409);
+  if (course.instructor.toString() === requester.userId) {
+    throw new AppError("You cannot enroll in your own course", 403);
   }
 
   try {
-    return await Enrollment.create({
-      student: new Types.ObjectId(studentId),
-      course: new Types.ObjectId(input.courseId),
+    const enrollment = await Enrollment.create({
+      student: new Types.ObjectId(requester.userId),
+      course: course._id,
+      status: "active",
+      enrolledAt: new Date(),
     });
-  } catch (error: unknown) {
+
+    await enrollment.populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title price level" },
+    ]);
+
+    return enrollment;
+  } catch (error) {
     if (
       typeof error === "object" &&
       error !== null &&
