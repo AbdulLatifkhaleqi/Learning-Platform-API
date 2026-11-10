@@ -16,6 +16,8 @@ const assertValidId = (id: string, resource: string): void => {
   }
 };
 
+import mongoose, { Types } from "mongoose";
+
 export const createEnrollment = async (
   courseId: string,
   requester: {
@@ -23,43 +25,56 @@ export const createEnrollment = async (
     role: "student" | "teacher" | "admin";
   },
 ) => {
-  assertValidId(courseId, "course");
-  assertValidId(requester.userId, "user");
+  // Validate IDs and permissions first.
 
-  if (requester.role !== "student") {
-    throw new AppError("Only students can enroll in courses", 403);
-  }
-
-  const course = await Course.findOne({
-    _id: new Types.ObjectId(courseId),
-    status: "published",
-  })
-    .select("_id instructor")
-    .lean()
-    .exec();
-
-  if (!course) {
-    throw new AppError("Course not found or not available for enrollment", 404);
-  }
-
-  if (course.instructor.toString() === requester.userId) {
-    throw new AppError("You cannot enroll in your own course", 403);
-  }
+  const session = await mongoose.startSession();
 
   try {
-    const enrollment = await Enrollment.create({
-      student: new Types.ObjectId(requester.userId),
-      course: course._id,
-      status: "active",
-      enrolledAt: new Date(),
+    let createdEnrollment;
+
+    await session.withTransaction(async () => {
+      const course = await Course.findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(courseId),
+          status: "published",
+        },
+        {
+          $inc: { enrollmentCount: 1 },
+        },
+        {
+          new: true,
+          session,
+        },
+      ).select("_id instructor");
+
+      if (!course) {
+        throw new AppError("Course is not available", 404);
+      }
+
+      if (course.instructor.toString() === requester.userId) {
+        throw new AppError("You cannot enroll in your own course", 403);
+      }
+
+      const [enrollment] = await Enrollment.create(
+        [
+          {
+            student: new Types.ObjectId(requester.userId),
+            course: course._id,
+            status: "active",
+            enrolledAt: new Date(),
+          },
+        ],
+        { session },
+      );
+
+      createdEnrollment = enrollment;
     });
 
-    await enrollment.populate([
-      { path: "student", select: "name email" },
-      { path: "course", select: "title price level" },
-    ]);
+    if (!createdEnrollment) {
+      throw new AppError("Enrollment creation failed", 500);
+    }
 
-    return enrollment;
+    return createdEnrollment;
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -67,10 +82,12 @@ export const createEnrollment = async (
       "code" in error &&
       error.code === 11000
     ) {
-      throw new AppError("You are already enrolled in this course", 409);
+      throw new AppError("Already enrolled in this course", 409);
     }
 
     throw error;
+  } finally {
+    await session.endSession();
   }
 };
 
