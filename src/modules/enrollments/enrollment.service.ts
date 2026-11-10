@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 import { Enrollment } from "./enrollment.model.js";
 import { Course } from "../courses/course.model.js";
@@ -15,8 +15,6 @@ const assertValidId = (id: string, resource: string): void => {
     throw new AppError(`Invalid ${resource} ID`, 400);
   }
 };
-
-import mongoose, { Types } from "mongoose";
 
 export const createEnrollment = async (
   courseId: string,
