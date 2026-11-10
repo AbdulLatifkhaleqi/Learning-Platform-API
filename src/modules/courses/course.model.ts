@@ -46,6 +46,12 @@ const courseSchema = new Schema(
       required: true,
       index: true,
     },
+    enrollmentCount: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,
