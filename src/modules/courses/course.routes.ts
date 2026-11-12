@@ -72,8 +72,6 @@ courseRoutes.patch(
   updateCourse,
 );
 
-// Teachers and admins can request deletion.
-// Ownership checks must also be enforced in the service.
 courseRoutes.delete(
   "/:id",
   authenticate,
