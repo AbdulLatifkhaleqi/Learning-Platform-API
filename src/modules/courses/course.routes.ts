@@ -23,7 +23,6 @@ import {
 
 const courseRoutes = Router();
 
-// Public routes
 courseRoutes.get("/", validate(listCoursesQuerySchema, "query"), getAllCourses);
 
 courseRoutes.get(
