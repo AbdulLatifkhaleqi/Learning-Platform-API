@@ -55,7 +55,6 @@ courseRoutes.patch(
   archiveCourse,
 );
 
-// Teachers and admins can create courses.
 courseRoutes.post(
   "/",
   authenticate,
