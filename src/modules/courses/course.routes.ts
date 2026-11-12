@@ -63,8 +63,6 @@ courseRoutes.post(
   createCourse,
 );
 
-// Teachers and admins can request updates.
-// Ownership checks must also be enforced in the service.
 courseRoutes.patch(
   "/:id",
   authenticate,
