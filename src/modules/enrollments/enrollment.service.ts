@@ -5,7 +5,6 @@ import { Course } from "../courses/course.model.js";
 import { AppError } from "../../utils/AppError.js";
 
 import type {
-  CreateEnrollmentInput,
   ListEnrollmentsInput,
   UpdateEnrollmentInput,
 } from "./enrollment.types.js";
@@ -23,8 +22,6 @@ export const createEnrollment = async (
     role: "student" | "teacher" | "admin";
   },
 ) => {
-  // Validate IDs and permissions first.
-
   const session = await mongoose.startSession();
 
   try {
