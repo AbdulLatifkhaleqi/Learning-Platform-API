@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 import { Enrollment } from "../enrollments/enrollment.model.js";
 import { Course } from "./course.model.js";
@@ -161,41 +161,69 @@ export const deleteCourse = async (
     throw new AppError("Insufficient permissions", 403);
   }
 
-  const filter: Record<string, unknown> = {
-    _id: new Types.ObjectId(courseId),
-  };
+  const session = await mongoose.startSession();
 
-  if (requester.role === "teacher") {
-    filter.instructor = new Types.ObjectId(requester.userId);
+  try {
+    let deletedCourseId: string | undefined;
+
+    await session.withTransaction(async () => {
+      const filter: Record<string, unknown> = {
+        _id: new Types.ObjectId(courseId),
+      };
+
+      if (requester.role === "teacher") {
+        filter.instructor = new Types.ObjectId(requester.userId);
+      }
+
+      // Atomically lock the course document for this transaction.
+      const course = await Course.findOneAndUpdate(
+        filter,
+        { $inc: { enrollmentCount: 0 } },
+        { new: true, session },
+      )
+        .select("_id enrollmentCount")
+        .exec();
+
+      if (!course) {
+        throw new AppError("Course not found or access denied", 404);
+      }
+
+      const enrollmentExists = await Enrollment.exists({
+        course: course._id,
+      }).session(session);
+
+      if (enrollmentExists) {
+        throw new AppError(
+          "Course has enrollment records and cannot be deleted. Archive it instead.",
+          409,
+        );
+      }
+
+      const deletedCourse = await Course.findOneAndDelete({
+        _id: course._id,
+        enrollmentCount: 0,
+      })
+        .session(session)
+        .exec();
+
+      if (!deletedCourse) {
+        throw new AppError("Course deletion failed", 409);
+      }
+
+      deletedCourseId = deletedCourse._id.toString();
+    });
+
+    if (!deletedCourseId) {
+      throw new AppError("Course deletion failed", 500);
+    }
+
+    return {
+      id: deletedCourseId,
+      deleted: true,
+    };
+  } finally {
+    await session.endSession();
   }
-
-  const course = await Course.findOne(filter).select("_id").lean().exec();
-
-  if (!course) {
-    throw new AppError("Course not found or access denied", 404);
-  }
-
-  const hasEnrollments = await Enrollment.exists({
-    course: course._id,
-  });
-
-  if (hasEnrollments) {
-    throw new AppError(
-      "Course cannot be deleted because it has enrollment records. Archive it instead.",
-      409,
-    );
-  }
-
-  const deletedCourse = await Course.findOneAndDelete(filter).exec();
-
-  if (!deletedCourse) {
-    throw new AppError("Course could not be deleted. Please retry.", 409);
-  }
-
-  return {
-    id: deletedCourse._id.toString(),
-    deleted: true,
-  };
 };
 
 export const archiveCourse = async (
