@@ -224,7 +224,9 @@ export const archiveCourse = async (
   const archivedCourse = await Course.findOneAndUpdate(
     filter,
     {
-      $set: { status: "archived" },
+      $set: {
+        status: "archived",
+      },
     },
     {
       new: true,
@@ -235,22 +237,22 @@ export const archiveCourse = async (
     .lean()
     .exec();
 
-  if (!archivedCourse) {
-    const existingCourse = await Course.exists({
-      _id: new Types.ObjectId(courseId),
-      ...(requester.role === "teacher"
-        ? { instructor: new Types.ObjectId(requester.userId) }
-        : {}),
-    });
-
-    if (!existingCourse) {
-      throw new AppError("Course not found or access denied", 404);
-    }
-
-    throw new AppError("Course is already archived", 409);
+  if (archivedCourse) {
+    return archivedCourse;
   }
 
-  return archivedCourse;
+  const existingCourse = await Course.exists({
+    _id: new Types.ObjectId(courseId),
+    ...(requester.role === "teacher"
+      ? { instructor: new Types.ObjectId(requester.userId) }
+      : {}),
+  });
+
+  if (!existingCourse) {
+    throw new AppError("Course not found or access denied", 404);
+  }
+
+  throw new AppError("Course is already archived", 409);
 };
 
 export const getMyCourses = async (
