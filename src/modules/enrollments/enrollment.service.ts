@@ -22,10 +22,19 @@ export const createEnrollment = async (
     role: "student" | "teacher" | "admin";
   },
 ) => {
+  assertValidId(courseId, "course");
+  assertValidId(requester.userId, "user");
+
+  if (requester.role !== "student") {
+    throw new AppError("Only students can enroll in courses", 403);
+  }
+
   const session = await mongoose.startSession();
 
   try {
-    let createdEnrollment;
+    let createdEnrollment:
+      | Awaited<ReturnType<typeof Enrollment.create>>[number]
+      | undefined;
 
     await session.withTransaction(async () => {
       const course = await Course.findOneAndUpdate(
@@ -40,10 +49,15 @@ export const createEnrollment = async (
           new: true,
           session,
         },
-      ).select("_id instructor");
+      )
+        .select("_id instructor")
+        .exec();
 
       if (!course) {
-        throw new AppError("Course is not available", 404);
+        throw new AppError(
+          "Course not found or not available for enrollment",
+          404,
+        );
       }
 
       if (course.instructor.toString() === requester.userId) {
@@ -69,6 +83,11 @@ export const createEnrollment = async (
       throw new AppError("Enrollment creation failed", 500);
     }
 
+    await createdEnrollment.populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title price level" },
+    ]);
+
     return createdEnrollment;
   } catch (error) {
     if (
@@ -77,7 +96,7 @@ export const createEnrollment = async (
       "code" in error &&
       error.code === 11000
     ) {
-      throw new AppError("Already enrolled in this course", 409);
+      throw new AppError("You are already enrolled in this course", 409);
     }
 
     throw error;
