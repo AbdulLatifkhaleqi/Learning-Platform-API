@@ -1,8 +1,8 @@
 import mongoose, { Types } from "mongoose";
 
+import { AppError } from "../../utils/AppError.js";
 import { Enrollment } from "../enrollments/enrollment.model.js";
 import { Course } from "./course.model.js";
-import { AppError } from "../../utils/AppError.js";
 
 import type {
   CreateCourseInput,
