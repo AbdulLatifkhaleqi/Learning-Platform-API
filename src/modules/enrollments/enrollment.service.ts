@@ -43,7 +43,10 @@ export const createEnrollment = async (
           status: "published",
         },
         {
-          $inc: { enrollmentCount: 1 },
+          $inc: {
+            enrollmentCount: 1,
+            concurrencyVersion: 1,
+          },
         },
         {
           new: true,
