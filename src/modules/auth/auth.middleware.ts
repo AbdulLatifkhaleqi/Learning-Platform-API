@@ -1,5 +1,5 @@
-import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
+import type { RequestHandler } from "express";
 
 import { AppError } from "../../utils/AppError.js";
 
