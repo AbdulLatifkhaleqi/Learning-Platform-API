@@ -164,9 +164,7 @@ export const deleteCourse = async (
   const session = await mongoose.startSession();
 
   try {
-    let deletedCourseId: string | undefined;
-
-    await session.withTransaction(async () => {
+    const deletedCourseId = await session.withTransaction(async () => {
       const filter: Record<string, unknown> = {
         _id: new Types.ObjectId(courseId),
       };
@@ -175,13 +173,20 @@ export const deleteCourse = async (
         filter.instructor = new Types.ObjectId(requester.userId);
       }
 
-      // Atomically lock the course document for this transaction.
+      // Force a real write on the Course document.
       const course = await Course.findOneAndUpdate(
         filter,
-        { $inc: { enrollmentCount: 0 } },
-        { new: true, session },
+        {
+          $inc: {
+            concurrencyVersion: 1,
+          },
+        },
+        {
+          new: true,
+          session,
+        },
       )
-        .select("_id enrollmentCount")
+        .select("_id")
         .exec();
 
       if (!course) {
@@ -201,7 +206,6 @@ export const deleteCourse = async (
 
       const deletedCourse = await Course.findOneAndDelete({
         _id: course._id,
-        enrollmentCount: 0,
       })
         .session(session)
         .exec();
@@ -210,7 +214,7 @@ export const deleteCourse = async (
         throw new AppError("Course deletion failed", 409);
       }
 
-      deletedCourseId = deletedCourse._id.toString();
+      return deletedCourse._id.toString();
     });
 
     if (!deletedCourseId) {
