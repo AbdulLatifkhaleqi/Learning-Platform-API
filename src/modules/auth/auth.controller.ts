@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 
-import * as authService from "./auth.service.js";
 import type { LoginBody, RegisterBody } from "./auth.validation.js";
+import * as authService from "./auth.service.js";
 
 export const register: RequestHandler = async (req, res, next) => {
   try {
