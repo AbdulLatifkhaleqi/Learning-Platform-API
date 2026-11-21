@@ -11,8 +11,8 @@ import {
 import { validate } from "./user.middleware.js";
 
 import {
-  createUserSchema,
   listUsersQuerySchema,
+  createUserSchema,
   updateUserSchema,
   userIdParamsSchema,
 } from "./user.validation.js";
