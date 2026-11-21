@@ -7,8 +7,9 @@ import {
   getEnrollmentById,
   updateEnrollment,
 } from "./enrollment.controller.js";
-import { validate } from "./enrollment.middleware.js";
+
 import { authenticate } from "../auth/auth.middleware.js";
+import { validate } from "./enrollment.middleware.js";
 
 import {
   createEnrollmentSchema,
