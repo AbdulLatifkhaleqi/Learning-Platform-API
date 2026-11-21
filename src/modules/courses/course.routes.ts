@@ -11,8 +11,8 @@ import {
   updateCourse,
 } from "./course.controller.js";
 
-import { validate } from "./course.middleware.js";
 import { authenticate, requireRole } from "../auth/auth.middleware.js";
+import { validate } from "./course.middleware.js";
 
 import {
   createCourseSchema,
