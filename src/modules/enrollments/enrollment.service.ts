@@ -313,7 +313,7 @@ export const deleteEnrollment = async (
     userId: string;
     role: "student" | "teacher" | "admin";
   },
-): Promise<void> => {
+) => {
   assertValidId(enrollmentId, "enrollment");
   assertValidId(requester.userId, "requester");
 
@@ -321,29 +321,74 @@ export const deleteEnrollment = async (
     throw new AppError("Only administrators can delete enrollments", 403);
   }
 
-  const deletedEnrollment = await Enrollment.findOneAndDelete({
-    _id: new Types.ObjectId(enrollmentId),
-    status: { $ne: "completed" },
-  })
-    .select("_id")
-    .lean()
-    .exec();
+  const session = await mongoose.startSession();
 
-  if (!deletedEnrollment) {
-    const existingEnrollment = await Enrollment.findById(enrollmentId)
-      .select("status")
-      .lean()
-      .exec();
+  try {
+    const deletedEnrollmentId = await session.withTransaction(async () => {
+      const enrollment = await Enrollment.findOne({
+        _id: new Types.ObjectId(enrollmentId),
+      })
+        .select("_id course status")
+        .session(session)
+        .exec();
 
-    if (!existingEnrollment) {
-      throw new AppError("Enrollment not found", 404);
+      if (!enrollment) {
+        throw new AppError("Enrollment not found", 404);
+      }
+
+      if (enrollment.status === "completed") {
+        throw new AppError("Completed enrollments cannot be deleted", 409);
+      }
+
+      const course = await Course.findOneAndUpdate(
+        {
+          _id: enrollment.course,
+          enrollmentCount: { $gt: 0 },
+        },
+        {
+          $inc: {
+            enrollmentCount: -1,
+            concurrencyVersion: 1,
+          },
+        },
+        {
+          new: true,
+          session,
+        },
+      )
+        .select("_id")
+        .exec();
+
+      if (!course) {
+        throw new AppError(
+          "Course not found or enrollment count is inconsistent",
+          409,
+        );
+      }
+
+      const deletedEnrollment = await Enrollment.findOneAndDelete({
+        _id: enrollment._id,
+      })
+        .session(session)
+        .exec();
+
+      if (!deletedEnrollment) {
+        throw new AppError("Enrollment deletion failed", 409);
+      }
+
+      return deletedEnrollment._id.toString();
+    });
+
+    if (!deletedEnrollmentId) {
+      throw new AppError("Enrollment deletion failed", 500);
     }
 
-    if (existingEnrollment.status === "completed") {
-      throw new AppError("Completed enrollments cannot be deleted", 409);
-    }
-
-    throw new AppError("Enrollment could not be deleted", 409);
+    return {
+      id: deletedEnrollmentId,
+      deleted: true,
+    };
+  } finally {
+    await session.endSession();
   }
 };
 
