@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
-import { User } from "./user.model.js";
 import { AppError } from "../../utils/AppError.js";
+import { User } from "./user.model.js";
 
 import type {
   CreateUserInput,
