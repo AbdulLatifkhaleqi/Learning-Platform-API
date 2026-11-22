@@ -255,40 +255,24 @@ export const updateEnrollment = async (
   assertValidId(enrollmentId, "enrollment");
   assertValidId(requester.userId, "requester");
 
-  const enrollment = await Enrollment.findById(enrollmentId)
-    .select("student course status")
-    .lean()
-    .exec();
-
-  if (!enrollment) {
-    throw new AppError("Enrollment not found", 404);
-  }
-
   if (requester.role !== "admin") {
     throw new AppError("Only administrators can update enrollment status", 403);
   }
 
-  if (enrollment.status !== "active") {
-    throw new AppError("Only active enrollments can change status", 409);
-  }
-
-  if (input.status === "active") {
-    throw new AppError("An enrollment cannot transition back to active", 400);
+  if (input.status !== "completed" && input.status !== "cancelled") {
+    throw new AppError(
+      "Enrollment can only transition to completed or cancelled",
+      400,
+    );
   }
 
   const now = new Date();
 
-  const update: Record<string, unknown> = {
+  const update = {
     status: input.status,
+    completedAt: input.status === "completed" ? now : null,
+    cancelledAt: input.status === "cancelled" ? now : null,
   };
-
-  if (input.status === "completed") {
-    update.completedAt = now;
-    update.cancelledAt = null;
-  } else {
-    update.cancelledAt = now;
-    update.completedAt = null;
-  }
 
   const updatedEnrollment = await Enrollment.findOneAndUpdate(
     {
@@ -309,6 +293,14 @@ export const updateEnrollment = async (
     .exec();
 
   if (!updatedEnrollment) {
+    const enrollmentExists = await Enrollment.exists({
+      _id: new Types.ObjectId(enrollmentId),
+    });
+
+    if (!enrollmentExists) {
+      throw new AppError("Enrollment not found", 404);
+    }
+
     throw new AppError("Enrollment status has already changed", 409);
   }
 
