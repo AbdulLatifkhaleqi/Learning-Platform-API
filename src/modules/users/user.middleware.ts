@@ -1,5 +1,6 @@
 import type { RequestHandler } from "express";
 import type { ZodType } from "zod";
+
 import { AppError } from "../../utils/AppError.js";
 
 export type ValidationSource = "body" | "params" | "query";

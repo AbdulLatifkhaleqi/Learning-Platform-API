@@ -9,6 +9,12 @@ import type {
   UpdateEnrollmentInput,
 } from "./enrollment.types.js";
 
+const ALLOWED_TRANSITIONS = {
+  active: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+} as const;
+
 const assertValidId = (id: string, resource: string): void => {
   if (!/^[0-9a-fA-F]{24}$/.test(id)) {
     throw new AppError(`Invalid ${resource} ID`, 400);
