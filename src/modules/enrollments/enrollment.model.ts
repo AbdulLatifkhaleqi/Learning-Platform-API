@@ -47,6 +47,10 @@ const enrollmentSchema = new Schema(
   },
 );
 
+enrollmentSchema.index({
+  course: 1,
+  enrolledAt: 1,
+});
 enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
 enrollmentSchema.index({ student: 1, status: 1, createdAt: -1 });
 enrollmentSchema.index({ course: 1, status: 1, createdAt: -1 });
