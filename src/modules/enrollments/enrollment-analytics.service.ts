@@ -59,9 +59,7 @@ export const getEnrollmentAnalytics = async (
 
   const analytics = await Enrollment.aggregate([
     {
-      $match: {
-        course: new Types.ObjectId(courseId),
-      },
+      $match: match,
     },
     {
       $group: {
