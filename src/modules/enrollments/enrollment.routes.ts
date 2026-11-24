@@ -18,6 +18,7 @@ import {
   updateEnrollmentSchema,
 } from "./enrollment.validation.js";
 import { getEnrollmentStatsController } from "./enrollment-stats.controller.js";
+import { getEnrollmentAnalyticsController } from "./enrollment-analytics.controller.js";
 
 const enrollmentRoutes = Router();
 enrollmentRoutes.use(authenticate);
@@ -28,6 +29,11 @@ enrollmentRoutes.get(
   getEnrollmentStatsController,
 );
 
+enrollmentRoutes.get(
+  "/courses/:courseId/analytics/:period",
+  authenticate,
+  getEnrollmentAnalyticsController,
+);
 enrollmentRoutes
   .route("/")
   .post(validate(createEnrollmentSchema, "body"), createEnrollment)
