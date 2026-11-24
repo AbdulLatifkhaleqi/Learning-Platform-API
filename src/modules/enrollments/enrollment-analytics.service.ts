@@ -81,6 +81,9 @@ export const getEnrollmentAnalytics = async (
       },
     },
     {
+      $limit: query.limit,
+    },
+    {
       $project: {
         _id: 0,
         period: "$_id",
