@@ -39,6 +39,24 @@ export const getEnrollmentAnalytics = async (
 
   const dateFormat = period === "day" ? "%Y-%m-%d" : "%Y-%m";
 
+  const dateFilter: Record<string, Date> = {};
+
+  if (query.startDate) {
+    dateFilter.$gte = new Date(`${query.startDate}T00:00:00.000Z`);
+  }
+
+  if (query.endDate) {
+    dateFilter.$lte = new Date(`${query.endDate}T23:59:59.999Z`);
+  }
+
+  const match: Record<string, unknown> = {
+    course: new Types.ObjectId(courseId),
+  };
+
+  if (Object.keys(dateFilter).length > 0) {
+    match.enrolledAt = dateFilter;
+  }
+
   const analytics = await Enrollment.aggregate([
     {
       $match: {
