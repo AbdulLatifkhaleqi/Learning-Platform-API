@@ -1,6 +1,8 @@
 import { Types } from "mongoose";
-import { Enrollment } from "./enrollment.model.js";
+
 import { Course } from "../courses/course.model.js";
+import { Enrollment } from "./enrollment.model.js";
+
 import { assertValidId } from "../../utils/assert-valida-id.js";
 import { AppError } from "../../utils/AppError.js";
 import type { EnrollmentAnalyticsQuery } from "./enrollment-analytics.validation.js";
