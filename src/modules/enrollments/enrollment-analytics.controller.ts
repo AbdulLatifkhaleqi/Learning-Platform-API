@@ -1,15 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
+
 import { AppError } from "../../utils/AppError.js";
-import { getEnrollmentAnalytics } from "./enrollment-analytics.service.js";
 import type { EnrollmentAnalyticsQuery } from "./enrollment-analytics.validation.js";
+import { getEnrollmentAnalytics } from "./enrollment-analytics.service.js";
 
 export const getEnrollmentAnalyticsController = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const query = res.locals.validatedQuery as EnrollmentAnalyticsQuery;
-
   try {
     const { courseId, period } = req.params;
     const auth = res.locals.auth;
@@ -21,6 +20,8 @@ export const getEnrollmentAnalyticsController = async (
     if (period !== "day" && period !== "month") {
       throw new AppError("Period must be day or month", 400);
     }
+
+    const query = res.locals.validatedQuery as EnrollmentAnalyticsQuery;
 
     const analytics = await getEnrollmentAnalytics(courseId, period, query, {
       userId: auth.userId,
