@@ -17,12 +17,20 @@ import {
   listEnrollmentsQuerySchema,
   updateEnrollmentSchema,
 } from "./enrollment.validation.js";
+
 import { getEnrollmentStatsController } from "./enrollment-stats.controller.js";
 import { getEnrollmentAnalyticsController } from "./enrollment-analytics.controller.js";
 import { enrollmentAnalyticsQuerySchema } from "./enrollment-analytics.validation.js";
+import { getEnrollmentDashboardController } from "./enrollment-dashboard.controller.js";
 
 const enrollmentRoutes = Router();
 enrollmentRoutes.use(authenticate);
+
+enrollmentRoutes.get(
+  "/courses/:courseId/dashboard",
+  authenticate,
+  getEnrollmentDashboardController,
+);
 
 enrollmentRoutes.get(
   "/courses/:courseId/stats",
