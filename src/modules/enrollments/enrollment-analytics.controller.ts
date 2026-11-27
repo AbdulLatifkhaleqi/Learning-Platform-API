@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 
-import { AppError } from "../../utils/AppError.js";
 import type { EnrollmentAnalyticsQuery } from "./enrollment-analytics.validation.js";
+import { AppError } from "../../utils/AppError.js";
 import { getEnrollmentAnalytics } from "./enrollment-analytics.service.js";
 
 export const getEnrollmentAnalyticsController = async (
