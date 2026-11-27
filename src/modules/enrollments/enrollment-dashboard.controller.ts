@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 
-import { AppError } from "../../utils/AppError.js";
 import { getEnrollmentDashboard } from "./enrollment-dashboard.service.js";
+import { AppError } from "../../utils/AppError.js";
 
 export const getEnrollmentDashboardController = async (
   req: Request,
