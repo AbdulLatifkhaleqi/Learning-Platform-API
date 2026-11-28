@@ -25,29 +25,25 @@ import { getEnrollmentDashboardController } from "./enrollment-dashboard.control
 import { reconcileEnrollmentCountController } from "./enrollment-counter.controller.js";
 
 const enrollmentRoutes = Router();
+
 enrollmentRoutes.use(authenticate);
 
+// Admin only: repair enrollment counter
 enrollmentRoutes.post(
   "/courses/:courseId/reconcile-count",
-  authenticate,
   reconcileEnrollmentCountController,
 );
 
+// Teacher / Admin access is checked inside the service
 enrollmentRoutes.get(
   "/courses/:courseId/dashboard",
-  authenticate,
   getEnrollmentDashboardController,
 );
 
-enrollmentRoutes.get(
-  "/courses/:courseId/stats",
-  authenticate,
-  getEnrollmentStatsController,
-);
+enrollmentRoutes.get("/courses/:courseId/stats", getEnrollmentStatsController);
 
 enrollmentRoutes.get(
   "/courses/:courseId/analytics/:period",
-  authenticate,
   validate(enrollmentAnalyticsQuerySchema, "query"),
   getEnrollmentAnalyticsController,
 );
