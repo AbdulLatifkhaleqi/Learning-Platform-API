@@ -22,9 +22,16 @@ import { getEnrollmentStatsController } from "./enrollment-stats.controller.js";
 import { getEnrollmentAnalyticsController } from "./enrollment-analytics.controller.js";
 import { enrollmentAnalyticsQuerySchema } from "./enrollment-analytics.validation.js";
 import { getEnrollmentDashboardController } from "./enrollment-dashboard.controller.js";
+import { reconcileEnrollmentCountController } from "./enrollment-counter.controller.js";
 
 const enrollmentRoutes = Router();
 enrollmentRoutes.use(authenticate);
+
+enrollmentRoutes.post(
+  "/courses/:courseId/reconcile-count",
+  authenticate,
+  reconcileEnrollmentCountController,
+);
 
 enrollmentRoutes.get(
   "/courses/:courseId/dashboard",
